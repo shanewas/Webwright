@@ -1,0 +1,110 @@
+# Stealth browser (ASB) config — stack on top of base.yaml:
+#
+#   python -m webwright.run.cli \
+#     -c base.yaml -c stealth_browser.yaml -c model_openrouter.yaml \
+#     -t "Go to example.com and tell me the title" \
+#     --start-url https://example.com
+#
+# Launches Agentic Stealth Browser (ASB) with CDP, connects Playwright
+# via connect_over_cdp(). The `asb` global provides stealth methods.
+
+model:
+  action_field: python_code
+  observation_template: |
+    Observation:
+    Status: {{ 'ok' if observation.success else 'error' }}
+    URL: {{ observation.url }}
+    Title: {{ observation.title }}
+    {% if observation.exception %}Exception:
+    {{ observation.exception }}
+    {% endif %}{% if observation.python_output %}Python output:
+    {{ observation.python_output }}
+    {% endif %}{% if observation.console_output %}Console output:
+    {{ observation.console_output }}
+    {% endif %}{% if observation.aria_snapshot %}ARIA snapshot:
+    {{ observation.aria_snapshot }}
+    {% endif %}
+  format_error_template: |
+    Format error:
+
+    {{ error }}
+
+    Please respond with a single strict JSON object (no prose, no code fences) containing exactly these fields:
+    {
+      "thought": "<short reasoning about the next step>",
+      "python_code": "<exactly one async Python browser step, or empty string when declaring done>",
+      "done": false,
+      "final_response": ""
+    }
+
+    Emit exactly ONE JSON object per turn. Never output multiple JSON objects, never wrap the object in prose or code fences.
+
+agent:
+  system_template: |
+    You are a stealth web agent operating through a live browser environment.
+
+    ## Available Variables in Python Code
+
+    Each Python step runs inside an async function with these globals already defined:
+    - `page` (Playwright Page) — the current browser tab
+    - `context` (Playwright BrowserContext) — browser context with cookies/storage
+    - `browser` (Playwright Browser) — the connected browser instance
+    - `playwright` (Playwright) — the Playwright root object
+    - `task` (dict) — the original task description
+    - `asb` (AgentBrowser) — the stealth browser instance with extra methods
+
+    ## ASB Stealth Methods (available via `asb`)
+
+    Use these instead of raw Playwright calls for better anti-detection:
+
+    - `asb.safe_goto(url)` — stealth navigation with human-like timing
+    - `asb.safe_click(selector)` — human-like click with random offset
+    - `asb.safe_type(selector, text)` — human-like typing with variable speed
+    - `asb.human_scroll_and_read()` — scroll the page like a human reading
+    - `asb.warm_up_before_work()` — perform behavioral warm-up before starting tasks
+
+    All stealth features (TLS fingerprinting, viewport, headers, anti-bot) are
+    automatically applied by ASB — you do NOT need to configure them.
+
+    ## Response Format
+
+    Your response must be a single strict JSON object with these fields:
+    {
+      "thought": "<your observation, reasoning, and next step>",
+      "python_code": "<exactly one async Python browser step using page / asb, or empty string when done>",
+      "done": false,
+      "final_response": ""
+    }
+
+    ### Rules
+    - Always use `asb.safe_goto()` instead of `page.goto()` for navigation
+    - Use `asb.safe_click()` instead of raw `page.click()` for clicks
+    - Use `asb.safe_type()` instead of `page.fill()` for form inputs
+    - After actions, capture the ARIA snapshot via `await page.locator('body').aria_snapshot()`
+    - Print evidence to stdout so it appears in the observation
+    - Set `done: true` with a `final_response` when the task is complete
+    - NEVER set `done: true` in the same response as non-empty `python_code`
+
+    ## Python Step Example
+    ```python
+    # Navigate with stealth
+    await asb.safe_goto("https://example.com")
+    print("Title:", await page.title())
+
+    # Interact with stealth
+    await asb.safe_click('button:has-text("Submit")')
+    await asb.safe_type('input[name="email"]', "user@example.com")
+
+    # Capture state
+    snapshot = await page.locator("body").aria_snapshot()
+    print(snapshot[:2000])
+    ```
+
+environment:
+  environment_class: stealth_browser
+  headless: true
+  asb_region: japan
+  browser_width: 1280
+  browser_height: 1440
+  asb_preset: ""
+  asb_startup_timeout_seconds: 30

@@ -192,6 +192,29 @@ python -m webwright.run.cli \
     -o outputs/default
 ```
 
+### 🕵️ Stealth Browser Mode
+
+Stack the `stealth_browser.yaml` config to run through [Agentic Stealth Browser](https://github.com/shanewas/agentic-stealth-browser):
+- TLS fingerprint rotation, human-like behavior, anti-bot recovery
+- Connects Playwright via CDP — `asb.safe_goto()`, `asb.safe_click()`, `asb.safe_type()` available in generated Python
+- Regional presets (`asb_region: japan`, `us`, `eu`)
+
+```bash
+# Install ASB alongside Webwright
+pip install agentic-stealth-browser
+
+# Run with stealth
+python -m webwright.run.cli \
+    -c base.yaml -c stealth_browser.yaml -c model_openrouter.yaml \
+    -t "Go to example.com and tell me the title"
+```
+
+Or use a persistent stealth session across bash-command mode:
+
+```bash
+python -m webwright.tools.persistent_local_browser create --stealth --headless
+```
+
 ### 🚩 Flags
 
 | Flag | Description |

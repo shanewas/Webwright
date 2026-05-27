@@ -55,7 +55,7 @@ def _chromium_executable() -> str:
     """Locate the Playwright-bundled Chromium executable."""
     try:
         from playwright.sync_api import sync_playwright
-    except ImportError as exc:  # pragma: no cover - import guard
+    except ImportError as exc:
         raise SystemExit(f"error: playwright is not installed: {exc}")
     with sync_playwright() as p:
         path = p.chromium.executable_path
@@ -64,6 +64,52 @@ def _chromium_executable() -> str:
             "error: Playwright chromium binary not found. Run `playwright install chromium`."
         )
     return path
+
+
+def _cmd_create_stealth(
+    args: argparse.Namespace,
+    workspace_dir: str,
+    out_path: Path,
+    user_data_dir: Path,
+) -> int:
+    """Launch via Agentic Stealth Browser with debug_cdp=True."""
+    import asyncio
+    import json
+
+    async def _launch() -> dict:
+        from core.agent_browser import AgentBrowser
+
+        asb = AgentBrowser(
+            session_name="webwright-persistent-stealth",
+            anonymous=True,
+        )
+        await asb.launch(
+            headless=args.headless,
+            debug_cdp=True,
+        )
+        cdp_info = await asb.get_cdp_endpoint()
+        if isinstance(cdp_info, dict) and cdp_info.get("status") == "enabled":
+            connect_url = cdp_info["ws_endpoint"]
+        else:
+            raise RuntimeError(
+                f"ASB CDP endpoint not available: {cdp_info}"
+            )
+        return {
+            "id": uuid.uuid4().hex,
+            "pid": 0,
+            "connectUrl": connect_url,
+            "userDataDir": str(user_data_dir),
+            "stealth": True,
+            "createdAt": int(time.time()),
+            "cdp_info": cdp_info,
+        }
+
+    session = asyncio.run(_launch())
+    out_path.write_text(json.dumps(session, indent=2) + "\n", encoding="utf-8")
+    print(f"LB_SESSION_ID={session['id']}")
+    print(f"LB_CONNECT_URL={session['connectUrl']}")
+    print(f"LB_STEALTH=true")
+    return 0
 
 
 def _pid_alive(pid: int) -> bool:
@@ -111,6 +157,10 @@ def _cmd_create(args: argparse.Namespace) -> int:
         args.user_data_dir or DEFAULT_USER_DATA_SUBDIR, workspace_dir
     )
     out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if args.stealth:
+        return _cmd_create_stealth(args, workspace_dir, out_path, user_data_dir)
+
     user_data_dir.mkdir(parents=True, exist_ok=True)
 
     chromium = _chromium_executable()
@@ -253,6 +303,12 @@ def _build_parser() -> argparse.ArgumentParser:
         action=argparse.BooleanOptionalAction,
         default=True,
         help="Launch Chromium headless (default: True).",
+    )
+    create.add_argument(
+        "--stealth",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Launch via Agentic Stealth Browser instead of raw Chromium.",
     )
     create.add_argument(
         "--no-sandbox",

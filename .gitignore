@@ -1,8 +1,12 @@
-**/__pycache__/
+# Webwright run outputs
+outputs/
+
+# Python
+venv/
+__pycache__/
 *.pyc
 *.egg-info/
-outputs/
-.tmp/
-.claude/
-.venv/
-venv/
+
+# Temp / test files
+test_stealth_integration.py
+m1-prompt.txt
