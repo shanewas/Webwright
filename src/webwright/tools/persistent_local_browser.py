@@ -87,6 +87,9 @@ def _cmd_create_stealth(
             headless=args.headless,
             debug_cdp=True,
         )
+        pid = 0
+        if hasattr(asb, "_browser_process") and asb._browser_process is not None:
+            pid = getattr(asb._browser_process, "pid", 0) or 0
         cdp_info = await asb.get_cdp_endpoint()
         if isinstance(cdp_info, dict) and cdp_info.get("status") == "enabled":
             connect_url = cdp_info["ws_endpoint"]
@@ -96,7 +99,7 @@ def _cmd_create_stealth(
             )
         return {
             "id": uuid.uuid4().hex,
-            "pid": 0,
+            "pid": pid,
             "connectUrl": connect_url,
             "userDataDir": str(user_data_dir),
             "stealth": True,

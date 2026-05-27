@@ -1,0 +1,7 @@
+# Model modifier — Grok Build variant (via OpenRouter).
+# Stack on top of base.yaml:
+#   python -m webwright.run.cli -c base.yaml -c model_grok.yaml ...
+model:
+  model_class: openrouter
+  model_name: x-ai/grok-build-0.1
+  openrouter_endpoint: https://openrouter.ai/api/v1

@@ -11,18 +11,13 @@ from __future__ import annotations
 import asyncio
 import io
 import json
-import os
 import textwrap
-import time
 import traceback
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, Field
-
-_STEALTH_CDP_HOST = "127.0.0.1"
-_STEALTH_CDP_PORT = 0  # random port via chrome
 
 
 class StealthBrowserEnvironmentConfig(BaseModel):
@@ -98,7 +93,10 @@ class StealthBrowserEnvironment:
         return self._loop
 
     def _run(self, coro):
-        return self._ensure_loop().run_until_complete(coro)
+        timeout = getattr(self.config, "asb_startup_timeout_seconds", 30)
+        return self._ensure_loop().run_until_complete(
+            asyncio.wait_for(coro, timeout=timeout)
+        )
 
     async def _prepare_async(self) -> None:
         from core.agent_browser import AgentBrowser
@@ -169,17 +167,19 @@ class StealthBrowserEnvironment:
         # ASB binds CDP to 127.0.0.1 on a random port; try to extract it
         # from the browser process args or default heuristic
         port = getattr(asb, "_cdp_port", None)
+        last_error: Exception | None = None
         if port:
             base = f"http://127.0.0.1:{port}"
             try:
                 with urllib.request.urlopen(f"{base}/json/version", timeout=3) as resp:
                     info = j.loads(resp.read())
                     return info.get("webSocketDebuggerUrl", base)
-            except Exception:
-                pass
+            except Exception as exc:
+                last_error = exc
         raise RuntimeError(
             "Could not discover ASB CDP endpoint. "
-            "Ensure AgentBrowser was launched with debug_cdp=True."
+            "Ensure AgentBrowser was launched with debug_cdp=True. "
+            f"Last error: {last_error}"
         )
 
     # ── page listeners ────────────────────────────────────────────────
@@ -281,6 +281,7 @@ class StealthBrowserEnvironment:
         url = ""
         title = ""
         aria_snapshot = ""
+        screenshot_path: Path | None = None
 
         if page is not None:
             try:
@@ -297,12 +298,18 @@ class StealthBrowserEnvironment:
                 )
             except Exception:
                 aria_snapshot = ""
+            try:
+                screenshot_path = self._screenshots_dir() / f"step_{self._step_index:04d}.png"
+                await page.screenshot(path=str(screenshot_path), full_page=False)
+            except Exception:
+                screenshot_path = None
 
         return {
             "success": success,
             "exception": exception_text,
             "url": url or self.config.start_url or "",
             "title": title,
+            "screenshot_path": str(screenshot_path) if screenshot_path is not None else "",
             "aria_snapshot": aria_snapshot,
             "python_code": "",
             "python_output": "",

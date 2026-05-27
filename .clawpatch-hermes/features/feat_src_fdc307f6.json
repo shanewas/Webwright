@@ -1,0 +1,70 @@
+{
+  "featureId": "feat_src_fdc307f6",
+  "title": "src source files",
+  "summary": "Source modules under /root/Webwright/src.",
+  "kind": "library",
+  "source": "manual-fallback",
+  "confidence": "medium",
+  "entrypoints": [],
+  "ownedFiles": [
+    {
+      "path": "/root/Webwright/src/webwright/__init__.py",
+      "reason": "source"
+    },
+    {
+      "path": "/root/Webwright/src/webwright/agents/__init__.py",
+      "reason": "source"
+    },
+    {
+      "path": "/root/Webwright/src/webwright/agents/default.py",
+      "reason": "source"
+    },
+    {
+      "path": "/root/Webwright/src/webwright/config/__init__.py",
+      "reason": "source"
+    },
+    {
+      "path": "/root/Webwright/src/webwright/environments/__init__.py",
+      "reason": "source"
+    },
+    {
+      "path": "/root/Webwright/src/webwright/environments/local_browser.py",
+      "reason": "source"
+    },
+    {
+      "path": "/root/Webwright/src/webwright/environments/local_workspace.py",
+      "reason": "source"
+    },
+    {
+      "path": "/root/Webwright/src/webwright/environments/stealth_browser.py",
+      "reason": "source"
+    },
+    {
+      "path": "/root/Webwright/src/webwright/exceptions.py",
+      "reason": "source"
+    },
+    {
+      "path": "/root/Webwright/src/webwright/models/__init__.py",
+      "reason": "source"
+    },
+    {
+      "path": "/root/Webwright/src/webwright/models/anthropic_model.py",
+      "reason": "source"
+    },
+    {
+      "path": "/root/Webwright/src/webwright/models/base.py",
+      "reason": "source"
+    }
+  ],
+  "contextFiles": [],
+  "tests": [
+    "/root/Webwright/tests/conftest.py",
+    "/root/Webwright/tests/unit/test_tool_model_routing.py"
+  ],
+  "trustBoundaries": [],
+  "tags": [
+    "manual",
+    "src"
+  ],
+  "status": "pending"
+}

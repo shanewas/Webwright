@@ -1,0 +1,29 @@
+{
+  "featureId": "feat_root_ae4533f6",
+  "title": "Root scripts",
+  "summary": "Top-level source files in the project root.",
+  "kind": "scripts",
+  "source": "manual-fallback",
+  "confidence": "high",
+  "entrypoints": [
+    {
+      "path": "/root/Webwright/test_stealth_integration.py",
+      "symbol": null,
+      "route": null,
+      "command": null
+    }
+  ],
+  "ownedFiles": [
+    {
+      "path": "/root/Webwright/test_stealth_integration.py",
+      "reason": "entrypoint"
+    }
+  ],
+  "contextFiles": [],
+  "tests": [],
+  "trustBoundaries": [],
+  "tags": [
+    "manual"
+  ],
+  "status": "pending"
+}
